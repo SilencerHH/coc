@@ -4,6 +4,7 @@ structure Term = struct
 
   datatype term =
     Sort of sort
+    | Const of string
     | Var of int
     | Pi of term * term
     | Lam of term * term

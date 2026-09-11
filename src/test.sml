@@ -169,8 +169,19 @@ structure Test :> sig end = struct
       "def False := {A : prop} A\n\
       \def ~ : {A : prop} A -> False := [A : prop] A -> False"
       ":2.1-2.55: type mismatch\n\
-      \expected {$1 : prop} {$2 : $1} {$3 : prop} $3\n\
+      \expected {$1 : prop} {$2 : $1} False\n\
       \got      {$1 : prop} prop"
+
+  (* 类型错误 9 *)
+  val () =
+    fails
+      "def False := {A : prop} A\n\
+      \def True := False -> False\n\
+      \def triv : True := [h : False] h\n\
+      \def x : False := triv"
+      ":4.1-4.22: type mismatch\n\
+      \expected False\n\
+      \got      True"
 
   (* 编码自然数 *)
   val () =
