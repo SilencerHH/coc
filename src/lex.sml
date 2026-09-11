@@ -9,6 +9,7 @@ local
     (* 标识符 *)
     | ID
     (* 标点符号 *)
+    | AT
     | COLONEQ
     | COLON
     | COMMA
@@ -66,6 +67,7 @@ in
 
     fun read ss = case SS.first ss of
       NONE => ((EOF, ss), ss)
+      | SOME #"@" => cut 1 AT ss
       | SOME #":" =>
         if SS.isPrefix ":=" ss then cut 2 COLONEQ ss else cut 1 COLON ss
       | SOME #"," => cut 1 COMMA ss

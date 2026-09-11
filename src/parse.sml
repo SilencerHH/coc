@@ -40,26 +40,37 @@ end = struct
       in e end
 
   and infixexp strm e = case getTag (peek strm) of
-    LPAREN =>
-      let
-        val _ = eat strm LPAREN
-        val es = args strm
-        val _ = eat strm RPAREN
-      in infixexp strm (mkApp e es) end
+    LPAREN => infixexp strm (mkApp e (args strm))
     | MINUSGT =>
       let
         val _ = eat strm MINUSGT
         val e2 = exp strm
       in ((#1 (#1 e), #2 (#1 e2)), Pi ("", e, e2)) end
+    | ID =>
+      let
+        val x = prefixexp strm
+        val es = case getTag (peek strm) of
+          AT => (case (eat strm AT; getTag (peek strm)) of
+            LPAREN => args strm
+            | _ => [prefixexp strm])
+          | _ => []
+        val bop = mkApp x es
+        val e2 = exp strm
+      in
+        ((#1 (#1 e), #2 (#1 e2)),
+          App (((#1 (#1 e), #2 (#1 bop)), App (bop, e)), e2)) end
     | _ => e
 
   and args strm =
     let
+      val _ = eat strm LPAREN
       val e = exp strm
       fun go es = case getTag (peek strm) of
         RPAREN => rev es
         | _ => (eat strm COMMA; go (exp strm :: es))
-    in go [e] end
+      val es = go [e]
+      val _ = eat strm RPAREN
+    in es end
 
   fun cmd strm =
     let

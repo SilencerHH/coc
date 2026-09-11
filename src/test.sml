@@ -40,41 +40,56 @@ structure Test :> sig end = struct
   (***** 解析 *****)
 
   (* 空文件 *)
-  val () = if P.parse "" = [] then () else raise Match
+  val () = case P.parse "" of [] => () | _ => raise Match
 
   (* 注释 *)
-  val () =
-    if P.parse "def#something\nx := prop"
-      = [((0, 23), Def ("x", NONE, ((19, 23), Prop)))] then ()
-    else raise Match
+  val () = case P.parse "def#something\nx := prop" of
+    [((0, 23), Def ("x", NONE, ((19, 23), Prop)))] => ()
+    | _ => raise Match
 
   (* 混合标识符 *)
-  val () =
-    if P.parse "def 1->x := prop"
-      = [((0, 16), Def ("1->x", NONE, ((12, 16), Prop)))] then ()
-    else raise Match
+  val () = case P.parse "def 1->x := prop" of
+    [((0, 16), Def ("1->x", NONE, ((12, 16), Prop)))] => ()
+    | _ => raise Match
 
   (* 可省略空格 *)
-  val () =
-    if P.parse "def x:prop:=prop"
-      = [((0, 16), Def ("x", SOME ((6, 10), Prop), ((12, 16), Prop)))] then ()
-    else raise Match
+  val () = case P.parse "def x:prop:=prop" of
+    [((0, 16), Def ("x", SOME ((6, 10), Prop), ((12, 16), Prop)))] => ()
+    | _ => raise Match
 
-  (* 右结合 *)
-  val () =
-    if P.parse "def x := prop -> prop -> prop"
-      = [
-        ((0, 29),
-          Def (
-            "x",
-            NONE,
-            ((9, 29),
-              Pi (
-                "",
-                ((9, 13), Prop),
-                ((17, 29),
-                  Pi ("", ((17, 21), Prop), ((25, 29), Prop)))))))] then ()
-    else raise Match
+  (* 箭头右结合 *)
+  val () = case P.parse "def x := prop -> prop -> prop" of
+    [(_, Def (_, _,
+      ((9, 29), Pi ("", (_, Prop),
+        ((17, 29), Pi ("", (_, Prop), (_, Prop)))))))] => ()
+    | _ => raise Match
+
+  (* 中缀右结合 *)
+  val () = case
+    P.parse "def x := [a : prop] [+ : prop -> prop -> prop] a + a + a" of
+    [(_, Def (_, _, (_, Lam (_, _, (_, Lam (_, _,
+      ((47, 56), App (
+        ((47, 50), App ((_, Var "+"), (_, Var "a"))),
+        ((51, 56), App (
+          ((51, 54), App ((_, Var "+"), (_, Var "a"))),
+          (_, Var "a")))))))))))] => ()
+    | _ => raise Match
+
+  (* 中缀参数 *)
+  val () = case
+    P.parse
+      "def x\n\
+      \  := [a : prop] [+ : prop -> prop -> prop -> prop -> prop]\n\
+      \    a +@(a, a) a" of
+    [(_, Def (_, _, (_, Lam (_, _, (_, Lam (_, _,
+      ((69, 81), App (
+        ((69, 78), App (
+          ((71, 78), App (
+            ((71, 75), App (((71, 72), Var "+"), ((74, 75), Var "a"))),
+            ((77, 78), Var "a"))),
+          ((69, 70), Var "a"))),
+        ((80, 81), Var "a")))))))))] => ()
+    | _ => raise Match
 
   (* 语法错误 1 *)
   val () = (P.parse "def $"; raise Match) handle R.Syntax (4, 4) => ()
@@ -91,6 +106,10 @@ structure Test :> sig end = struct
   (* 语法错误 5 *)
   val () =
     (P.parse "def x := prop prop"; raise Match) handle R.Syntax (14, 18) => ()
+
+  (* 语法错误 6 *)
+  val () =
+    (P.parse "def x := x x"; raise Match) handle R.Syntax (12, 12) => ()
 
   (***** 验证 *****)
 
