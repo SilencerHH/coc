@@ -128,58 +128,73 @@ structure Test :> sig end = struct
   val () =
     fails
       "def x := {a : prop} {b : a} {c : b} c"
-      ":1.34-1.35: expected term of sort\ngot a"
+      ":1.34-1.35: type mismatch\nexpected (sort)\ngot      a"
 
   (* 类型错误 2 *)
   val () =
     fails
       "def x := {a : prop} {b : a} b"
-      ":1.29-1.30: expected term of sort\ngot a"
+      ":1.29-1.30: type mismatch\nexpected (sort)\ngot      a"
 
   (* 类型错误 3 *)
   val () =
     fails
       "def x := {a : prop} {b : a} [c : b] c"
-      ":1.34-1.35: expected term of sort\ngot a"
+      ":1.34-1.35: type mismatch\nexpected (sort)\ngot      a"
 
   (* 类型错误 4 *)
-  val () = fails "def x := prop(prop)" ":1.10-1.14: expected term of pi\ngot #"
+  val () =
+    fails
+      "def x := prop(prop)"
+      ":1.10-1.14: type mismatch\nexpected (pi)\ngot      #"
 
   (* 类型错误 5 *)
+  val () =
+    fails
+      "def x : prop := [a : prop] a"
+      ":1.17-1.29: type mismatch\nexpected prop\ngot      (pi)"
+
+  (* 类型错误 6 *)
+  val () =
+    fails
+      "def x : {a : prop -> prop} prop := [a : prop] prop"
+      ":1.41-1.45: type mismatch\nexpected {$1 : prop} prop\ngot      prop"
+
+  (* 类型错误 7 *)
   val () =
     fails
       "def x := ([x : prop] x)(prop)"
       ":1.25-1.29: type mismatch\nexpected prop\ngot      #"
 
-  (* 类型错误 6 *)
+  (* 类型错误 8 *)
   val () =
     fails
       "def x := [a : prop] [b : prop] [c : a] [f : b -> b] f(c)"
       ":1.55-1.56: type mismatch\nexpected b\ngot      a"
 
-  (* 类型错误 7 *)
+  (* 类型错误 9 *)
   val () =
     fails
       "def x : prop := prop"
-      ":1.1-1.21: type mismatch\nexpected prop\ngot      #"
+      ":1.17-1.21: type mismatch\nexpected prop\ngot      #"
 
-  (* 类型错误 8 *)
+  (* 类型错误 10 *)
   val () =
     fails
       "def False := {A : prop} A\n\
       \def ~ : {A : prop} A -> False := [A : prop] A -> False"
-      ":2.1-2.55: type mismatch\n\
-      \expected {$1 : prop} {$2 : $1} False\n\
-      \got      {$1 : prop} prop"
+      ":2.45-2.55: type mismatch\n\
+      \expected {$1 : A} False\n\
+      \got      prop"
 
-  (* 类型错误 9 *)
+  (* 类型错误 11 *)
   val () =
     fails
       "def False := {A : prop} A\n\
       \def True := False -> False\n\
       \def triv : True := [h : False] h\n\
       \def x : False := triv"
-      ":4.1-4.22: type mismatch\n\
+      ":4.18-4.22: type mismatch\n\
       \expected False\n\
       \got      True"
 

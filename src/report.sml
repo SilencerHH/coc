@@ -5,9 +5,9 @@ structure Report :> sig
   exception Syntax of loc
   exception Unbound of loc * string
   exception Duplicate of loc * string
-  exception Shape of loc * (string * Term.term) list * string * Term.term
-  exception Mismatch of loc * (string * Term.term) list * Term.term * Term.term
+  exception Mismatch of loc * string * string
 
+  val show : (string * Term.term) list -> Term.term -> string
   val report : string -> string -> exn -> 'a
 
 end = struct
@@ -19,8 +19,7 @@ end = struct
   exception Syntax of loc
   exception Unbound of loc * string
   exception Duplicate of loc * string
-  exception Shape of loc * (string * Term.term) list * string * Term.term
-  exception Mismatch of loc * (string * Term.term) list * Term.term * Term.term
+  exception Mismatch of loc * string * string
 
   fun show ctx t =
     let
@@ -57,13 +56,8 @@ end = struct
       Syntax loc => report' loc "syntax error"
       | Unbound (loc, x) => report' loc ("unbound id " ^ x)
       | Duplicate (loc, x) => report' loc ("duplicate definition of " ^ x)
-      | Shape (loc, ctx, x, t) =>
-        report' loc ("expected term of " ^ x ^ "\ngot " ^ show ctx t)
-      | Mismatch (loc, ctx, t1, t2) =>
-        report'
-          loc
-          ("type mismatch\nexpected " ^ show ctx t1
-            ^ "\ngot      " ^ show ctx t2)
+      | Mismatch (loc, t1, t2) =>
+        report' loc ("type mismatch\nexpected " ^ t1 ^ "\ngot      " ^ t2)
       | _ => raise ex end
 
 end

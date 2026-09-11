@@ -60,18 +60,19 @@ end = struct
         val (t1, u1) = infer env ctx e1
         val () = case normalize env u1 of
           Sort _ => ()
-          | _ => raise R.Shape (#1 e1, ctx, "sort", u1)
-        val (t2, u2) = infer env ((x, t1) :: ctx) e2
+          | _ => raise R.Mismatch (#1 e1, "(sort)", R.show ctx u1)
+        val ctx' = (x, t1) :: ctx
+        val (t2, u2) = infer env ctx' e2
         val () = case normalize env u2 of
           Sort _ => ()
-          | _ => raise R.Shape (#1 e2, (x, t1) :: ctx, "sort", u2)
+          | _ => raise R.Mismatch (#1 e2, "(sort)", R.show ctx' u2)
       in (Pi (t1, t2), u2) end
     | S.Lam (x, e1, e2) =>
       let
         val (t1, u1) = infer env ctx e1
         val () = case normalize env u1 of
           Sort _ => ()
-          | _ => raise R.Shape (#1 e1, ctx, "sort", u1)
+          | _ => raise R.Mismatch (#1 e1, "(sort)", R.show ctx u1)
         val (t2, u2) = infer env ((x, t1) :: ctx) e2
       in (Lam (t1, t2), Pi (t1, u2)) end
     | S.App (e1, e2) =>
@@ -79,22 +80,40 @@ end = struct
         val (t1, u1) = infer env ctx e1
         val (u11, u12) = case normalize env u1 of
           Pi us => us
-          | _ => raise R.Shape (#1 e1, ctx, "pi", u1)
-        val (t2, u2) = infer env ctx e2
-      in
-        if equiv env (u11, u2) then (App (t1, t2), subst t2 u12)
-        else raise R.Mismatch (#1 e2, ctx, u11, u2) end
+          | _ => raise R.Mismatch (#1 e1, "(pi)", R.show ctx u1)
+        val t2 = check env ctx u11 e2
+      in (App (t1, t2), subst t2 u12) end
 
-  fun validate1 env (loc, S.Def (x, e1, e2)) =
-    let
-      val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-      val t1 = Option.map (#1 o infer env []) e1
-      val (v, t2) = infer env [] e2
-    in case t1 of
-      NONE => E.add (env, x, E.Df {v = v, t = t2})
-      | SOME t1' =>
-        if equiv env (t1', t2) then E.add (env, x, E.Df {v = v, t = t1'})
-        else raise R.Mismatch (loc, [], t1', t2) end
+  and check env ctx u (loc, e) = case e of
+    S.Lam (x, e1, e2) =>
+      let
+        val (u1, u2) = case normalize env u of
+          Pi us => us
+          | _ => raise R.Mismatch (loc, R.show ctx u, "(pi)")
+        val (t1, _) = infer env ctx e1
+        val () =
+          if equiv env (u1, t1) then ()
+          else raise R.Mismatch (#1 e1, R.show ctx u1, R.show ctx t1)
+        val t2 = check env ((x, t1) :: ctx) u2 e2
+      in Lam (t1, t2) end
+    | _ =>
+      let val (t, u') = infer env ctx (loc, e)
+      in
+        if equiv env (u, u') then t
+        else raise R.Mismatch (loc, R.show ctx u, R.show ctx u') end
+
+  fun validate1 env (loc, c) = case c of
+    S.Def (x, NONE, e) =>
+      let
+        val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
+        val (t, u) = infer env [] e
+      in E.add (env, x, E.Df {v = t, t = u}) end
+    | S.Def (x, SOME e1, e2) =>
+      let
+        val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
+        val (t1, _) = infer env [] e1
+        val t2 = check env [] t1 e2
+      in E.add (env, x, E.Df {v = t2, t = t1}) end
 
   fun validate env = app (validate1 env)
 
