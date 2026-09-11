@@ -55,21 +55,21 @@ end = struct
     | S.Pi (x, e1, e2) => (case infer env ctx e1 of
       (t1, Sort _) => (case infer env ((x, t1) :: ctx) e2 of
         (t2, u2 as Sort _) => (Pi (t1, t2), u2)
-        | _ => raise R.Shape (#1 e2, "sort"))
-      | _ => raise R.Shape (#1 e1, "sort"))
+        | (_, u) => raise R.Shape (#1 e2, (x, t1) :: ctx, "sort", u))
+      | (_, u) => raise R.Shape (#1 e1, ctx, "sort", u))
     | S.Lam (x, e1, e2) => (case infer env ctx e1 of
       (t1, Sort _) =>
         let val (t2, u2) = infer env ((x, t1) :: ctx) e2
         in (Lam (t1, t2), Pi (t1, u2)) end
-      | _ => raise R.Shape (#1 e1, "sort"))
+      | (_, u) => raise R.Shape (#1 e1, ctx, "sort", u))
     | S.App (e1, e2) => (case infer env ctx e1 of
       (t1, Pi (u11, u12)) =>
         let val (t2, u2) = infer env ctx e2
         in
           if equiv (u11, u2) then
             (normalize (App (t1, t2)), normalize (subst t2 u12))
-          else raise R.Mismatch (#1 e2) end
-      | _ => raise R.Shape (#1 e1, "pi"))
+          else raise R.Mismatch (#1 e2, ctx, u11, u2) end
+      | (_, u) => raise R.Shape (#1 e1, ctx, "pi", u))
 
   fun validate1 env (loc, S.Def (x, e1, e2)) =
     let
@@ -80,7 +80,7 @@ end = struct
       NONE => E.add (env, x, E.Df {v = v, t = t2})
       | SOME t1' =>
         if equiv (t1', t2) then E.add (env, x, E.Df {v = v, t = t1'})
-        else raise R.Mismatch loc end
+        else raise R.Mismatch (loc, [], t1', t2) end
 
   fun validate env = app (validate1 env)
 

@@ -7,6 +7,12 @@ structure Test :> sig end = struct
 
   open Syntax
 
+  fun fails src msg =
+    (K.validate (E.new ()) (P.parse src); raise Match)
+      handle ex =>
+        (R.report "" src ex
+          handle ex as Fail msg' => if msg = msg' then () else raise ex)
+
   (***** 环境 *****)
 
   (* 顺序提交与重置 *)
@@ -92,78 +98,79 @@ structure Test :> sig end = struct
     | _ => raise Match
 
   (* 语法错误 1 *)
-  val () = (P.parse "def $"; raise Match) handle R.Syntax (4, 4) => ()
+  val () = fails "def $" ":1.5-1.5: syntax error"
 
   (* 语法错误 2 *)
-  val () = (P.parse "def def"; raise Match) handle R.Syntax (4, 7) => ()
+  val () = fails "def def" ":1.5-1.8: syntax error"
 
   (* 语法错误 3 *)
-  val () = (P.parse "def :="; raise Match) handle R.Syntax (4, 6) => ()
+  val () = fails "def :=" ":1.5-1.7: syntax error"
 
   (* 语法错误 4 *)
-  val () = (P.parse "defx:=prop"; raise Match) handle R.Syntax (0, 4) => ()
+  val () = fails "defx:=prop" ":1.1-1.5: syntax error"
 
   (* 语法错误 5 *)
-  val () =
-    (P.parse "def x := prop prop"; raise Match) handle R.Syntax (14, 18) => ()
+  val () = fails "def x := prop prop" ":1.15-1.19: syntax error"
 
   (* 语法错误 6 *)
-  val () =
-    (P.parse "def x := x x"; raise Match) handle R.Syntax (12, 12) => ()
+  val () = fails "def x := x x" ":1.13-1.13: syntax error"
 
   (***** 验证 *****)
 
   (* 未绑定变量 *)
-  val () =
-    (K.validate (E.new ()) (P.parse "def x := x"); raise Match)
-      handle R.Unbound ((9, 10), "x") => ()
+  val () = fails "def x := x" ":1.10-1.11: unbound id x"
 
   (* 重复定义 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x := prop def x := prop"); raise Match)
-      handle R.Duplicate ((14, 27), "x") => ()
+    fails "def x := prop def x := prop" ":1.15-1.28: duplicate definition of x"
 
   (* 类型错误 1 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x := {a : prop} {b : a} {c : b} c");
-      raise Match)
-      handle R.Shape ((33, 34), "sort") => ()
+    fails
+      "def x := {a : prop} {b : a} {c : b} c"
+      ":1.34-1.35: expected term of sort\ngot a"
 
   (* 类型错误 2 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x := {a : prop} {b : a} b");
-      raise Match)
-      handle R.Shape ((28, 29), "sort") => ()
+    fails
+      "def x := {a : prop} {b : a} b"
+      ":1.29-1.30: expected term of sort\ngot a"
 
   (* 类型错误 3 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x := {a : prop} {b : a} [c : b] c");
-      raise Match)
-      handle R.Shape ((33, 34), "sort") => ()
+    fails
+      "def x := {a : prop} {b : a} [c : b] c"
+      ":1.34-1.35: expected term of sort\ngot a"
 
   (* 类型错误 4 *)
-  val () =
-    (K.validate (E.new ()) (P.parse "def x := prop(prop)"); raise Match)
-      handle R.Shape ((9, 13), "pi") => ()
+  val () = fails "def x := prop(prop)" ":1.10-1.14: expected term of pi\ngot #"
 
   (* 类型错误 5 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x := ([x : prop] x)(prop)");
-      raise Match)
-      handle R.Mismatch (24, 28) => ()
+    fails
+      "def x := ([x : prop] x)(prop)"
+      ":1.25-1.29: type mismatch\nexpected prop\ngot      #"
 
   (* 类型错误 6 *)
   val () =
-    (K.validate
-      (E.new ())
-      (P.parse "def x := [a : prop] [b : prop] [c : a] [f : b -> b] f(c)");
-      raise Match)
-      handle R.Mismatch (54, 55) => ()
+    fails
+      "def x := [a : prop] [b : prop] [c : a] [f : b -> b] f(c)"
+      ":1.55-1.56: type mismatch\nexpected b\ngot      a"
 
   (* 类型错误 7 *)
   val () =
-    (K.validate (E.new ()) (P.parse "def x : prop := prop"); raise Match)
-      handle R.Mismatch (0, 20) => ()
+    fails
+      "def x : prop := prop"
+      ":1.1-1.21: type mismatch\nexpected prop\ngot      #"
+
+  (* 类型错误 8 *)
+  val () =
+    fails
+      "def False := {A : prop} A\n\
+      \def ~ : {A : prop} A -> False := [A : prop] A -> False"
+      ":2.1-2.55: type mismatch\n\
+      \expected {$1 : prop} {$2 : $1} {$3 : prop} $3\n\
+      \got      {$1 : prop} prop"
 
   (* 编码自然数 *)
   val () =
