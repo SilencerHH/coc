@@ -6,7 +6,7 @@ structure Syntax = struct
     Prop
     | Var of string
     | Pi of string * exp * exp
-    | Lam of string * exp * exp
+    | Lam of string * exp option * exp
     | App of exp * exp
   withtype exp = loc * exp'
 

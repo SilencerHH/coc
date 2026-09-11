@@ -67,7 +67,8 @@ end = struct
           Sort _ => ()
           | _ => raise R.Mismatch (#1 e2, "(sort)", R.show ctx' u2)
       in (Pi (t1, t2), u2) end
-    | S.Lam (x, e1, e2) =>
+    | S.Lam (x, NONE, _) => raise R.Infer (loc, x)
+    | S.Lam (x, SOME e1, e2) =>
       let
         val (t1, u1) = infer env ctx e1
         val () = case normalize env u1 of
@@ -90,10 +91,13 @@ end = struct
         val (u1, u2) = case normalize env u of
           Pi us => us
           | _ => raise R.Mismatch (loc, R.show ctx u, "(pi)")
-        val (t1, _) = infer env ctx e1
-        val () =
-          if equiv env (u1, t1) then ()
-          else raise R.Mismatch (#1 e1, R.show ctx u1, R.show ctx t1)
+        val t1 = case e1 of
+          NONE => u1
+          | SOME e1' =>
+            let val (t1, _) = infer env ctx e1'
+            in
+              if equiv env (u1, t1) then t1
+              else raise R.Mismatch (#1 e1', R.show ctx u1, R.show ctx t1) end
         val t2 = check env ((x, t1) :: ctx) u2 e2
       in Lam (t1, t2) end
     | _ =>

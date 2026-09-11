@@ -27,8 +27,9 @@ end = struct
       let
         val pos1 = #1 (getLoc (eat strm LBRACK))
         val x = getValue (eat strm ID)
-        val _ = eat strm COLON
-        val e1 = exp strm
+        val e1 = case getTag (peek strm) of
+          COLON => (eat strm COLON; SOME (exp strm))
+          | _ => NONE
         val _ = eat strm RBRACK
         val e2 = exp strm
       in ((pos1, #2 (#1 e2)), Lam (x, e1, e2)) end

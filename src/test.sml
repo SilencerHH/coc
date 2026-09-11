@@ -198,6 +198,9 @@ structure Test :> sig end = struct
       \expected False\n\
       \got      True"
 
+  (* 无法推断 *)
+  val () = fails "def x := [x] x" ":1.10-1.15: cannot infer type of x"
+
   (* 编码自然数 *)
   val () =
     K.validate
@@ -205,7 +208,7 @@ structure Test :> sig end = struct
       (P.parse
         "def Nat := {A : prop} A -> (A -> A) -> A\n\
         \def 1 : Nat := [A : prop] [z : A] [s : A -> A] s(z)\n\
-        \def 2 : Nat := [A : prop] [z : A] [s : A -> A] s(s(z))\n\
+        \def 2 : Nat := [A] [z] [s] s(s(z))\n\
         \def + : Nat -> Nat -> Nat\n\
         \  := [m : Nat] [n : Nat] [A : prop] [z : A] [s : A -> A]\n\
         \    m(A, n(A, z, s), s)\n\

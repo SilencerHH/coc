@@ -6,6 +6,7 @@ structure Report :> sig
   exception Unbound of loc * string
   exception Duplicate of loc * string
   exception Mismatch of loc * string * string
+  exception Infer of loc * string
 
   val show : (string * Term.term) list -> Term.term -> string
   val report : string -> string -> exn -> 'a
@@ -20,6 +21,7 @@ end = struct
   exception Unbound of loc * string
   exception Duplicate of loc * string
   exception Mismatch of loc * string * string
+  exception Infer of loc * string
 
   fun show ctx t =
     let
@@ -58,6 +60,7 @@ end = struct
       | Duplicate (loc, x) => report' loc ("duplicate definition of " ^ x)
       | Mismatch (loc, t1, t2) =>
         report' loc ("type mismatch\nexpected " ^ t1 ^ "\ngot      " ^ t2)
+      | Infer (loc, x) => report' loc ("cannot infer type of " ^ x)
       | _ => raise ex end
 
 end
