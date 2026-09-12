@@ -33,6 +33,18 @@ end = struct
         val _ = eat strm RBRACK
         val e2 = exp strm
       in ((pos1, #2 (#1 e2)), Lam (x, e1, e2)) end
+    | LET =>
+      let
+        val pos1 = #1 (getLoc (eat strm LET))
+        val x = getValue (eat strm ID)
+        val e1 = case getTag (peek strm) of
+          COLON => (eat strm COLON; SOME (exp strm))
+          | _ => NONE
+        val _ = eat strm COLONEQ
+        val e2 = exp strm
+        val _ = eat strm IN
+        val e3 = exp strm
+      in ((pos1, #2 (#1 e3)), Let (x, e1, e2, e3)) end
     | _ =>
       let
         val _ = eat strm LPAREN

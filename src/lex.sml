@@ -4,6 +4,8 @@ local
     (* 文字关键字 *)
     AXIOM
     | DEF
+    | IN
+    | LET
     | PROP
     (* 符号关键字 *)
     | MINUSGT
@@ -84,6 +86,8 @@ in
           val tag = case SS.string ss1 of
             "axiom" => AXIOM
             | "def" => DEF
+            | "in" => IN
+            | "let" => LET
             | "prop" => PROP
             | "->" => MINUSGT
             | "" => ERROR

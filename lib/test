@@ -35,4 +35,6 @@ def =-trans
 axiom excluded-middle : {A : prop} A \/ ~(A)
 def double-negation-elim : {A : prop} ~(~(A)) -> A
   := [A] [hnna]
-    \/-elim(A, ~(A), A, excluded-middle(A), [ha] ha, [hna] hnna(hna, A))
+    let a->a := [ha : A] ha in
+    let ~a->a : ~(A) -> A := [hna] hnna(hna, A) in
+    \/-elim(A, ~(A), A, excluded-middle(A), a->a, ~a->a)

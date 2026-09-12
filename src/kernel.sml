@@ -84,6 +84,17 @@ end = struct
           | _ => raise R.Mismatch (#1 e1, "(pi)", R.show ctx u1)
         val t2 = check env ctx u11 e2
       in (App (t1, t2), subst t2 u12) end
+    | S.Let (x, e1, e2, e3) =>
+      let
+        val (t2, u2) = case e1 of
+          NONE => infer env ctx e2
+          | SOME e1' =>
+            let
+              val (t1, _) = infer env ctx e1'
+              val t2 = check env ctx t1 e2
+            in (t2, t1) end
+        val (t3, u3) = infer env ((x, u2) :: ctx) e3
+      in (App (Lam (u2, t3), t2), subst t2 u3) end
 
   and check env ctx u (loc, e) = case e of
     S.Lam (x, e1, e2) =>

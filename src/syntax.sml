@@ -8,6 +8,7 @@ structure Syntax = struct
     | Pi of string * exp * exp
     | Lam of string * exp option * exp
     | App of exp * exp
+    | Let of string * exp option * exp * exp
   withtype exp = loc * exp'
 
   datatype cmd' = Axiom of string * exp | Def of string * exp option * exp

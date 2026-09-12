@@ -204,8 +204,28 @@ structure Test :> sig end = struct
       "axiom a : prop axiom b : a axiom c : b"
       ":1.38-1.39: type mismatch\nexpected (sort)\ngot      a"
 
+  (* 类型判等错误 *)
+  val () =
+    fails
+      "axiom a : prop axiom b : a def x := let c := a in let d : c := b in d"
+      ":1.64-1.65: type mismatch\nexpected c\ngot      a"
+
   (* 无法推断 *)
   val () = fails "def x := [x] x" ":1.10-1.15: cannot infer type of x"
+
+  (* 变量遮蔽 *)
+  val () =
+    K.validate
+      (E.new ())
+      (P.parse
+        "axiom A : prop\n\
+        \axiom B : prop\n\
+        \axiom a : A\n\
+        \axiom b : B\n\
+        \def 1 := [a : A] [a : B] a\n\
+        \def 1+ : A -> B -> B := 1\n\
+        \def 2 := let a := a in let a := b in a\n\
+        \def 2+ : B := 2")
 
   (* 编码自然数 *)
   val () =
