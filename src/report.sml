@@ -30,7 +30,7 @@ end = struct
       fun go ctx = fn
         Sort Prop => "prop"
         | Sort Type => "#"
-        | Const x => x
+        | (Axiom x | Def (x, _)) => x
         | Var n => (#1 o #2 o valOf o List.findi (fn (m, _) => m = n)) ctx
         | Pi (t1, t2) =>
           let val x = fresh ()

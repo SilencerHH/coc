@@ -1,6 +1,6 @@
 structure Env :> sig
 
-  datatype entry = Ax of Term.term | Df of {v : Term.term, t : Term.term}
+  type entry = {v : Term.term, t : Term.term}
   type env
 
   val new : unit -> env
@@ -23,7 +23,7 @@ end = struct
 
   )
 
-  datatype entry = Ax of T.term | Df of {v : T.term, t : T.term}
+  type entry = {v : T.term, t : T.term}
   datatype env = Env of (int * entry) M.map ref * int ref
 
   fun new () = Env (ref M.empty, ref 0)
