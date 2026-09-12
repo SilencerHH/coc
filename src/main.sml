@@ -5,6 +5,7 @@ structure Main :> sig
   val load : string -> unit
   val reset : unit -> unit
   val axioms : unit -> unit
+  val init : unit -> unit
 
 end = struct
 
@@ -36,5 +37,13 @@ end = struct
     app
       (fn (x, t) => print (x ^ " : " ^ R.show C.empty t ^ "\n"))
       (E.listAxioms env)
+
+  fun init () = (
+    reset ();
+    load "lib/00-equality";
+    load "lib/01-logic";
+    load "lib/02-classical";
+    load "lib/03-description";
+    axioms ())
 
 end

@@ -1,0 +1,2 @@
+axiom iota : {A : prop} {P : A -> prop} Ex1(A, P) -> A
+axiom iota-prop :  {A : prop} {P : A -> prop} {h : Ex1(A, P)} P(iota(A, P, h))

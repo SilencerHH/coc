@@ -1,0 +1,45 @@
+def False : prop := {A : prop} A
+
+def ~ : prop -> prop := [A] A -> False
+
+def /\ : prop -> prop -> prop := [A] [B] {C : prop} (A -> B -> C) -> C
+
+def /\-intro : {A : prop} {B : prop} A -> B -> A /\ B
+  := [A] [B] [hA] [hB] [C] [hABC] hABC(hA, hB)
+def /\-elim-l : {A : prop} {B : prop} (A /\ B) -> A
+  := [A] [B] [h/\] h/\(A, [hA] [hB] hA)
+def /\-elim-r : {A : prop} {B : prop} (A /\ B) -> B
+  := [A] [B] [h/\] h/\(B, [hA] [hB] hB)
+
+def \/ : prop -> prop -> prop := [A] [B] {C : prop} (A -> C) -> (B -> C) -> C
+
+def \/-intro-l : {A : prop} {B : prop} A -> A \/ B
+  := [A] [B] [hA] [C] [hAC] [hBC] hAC(hA)
+def \/-intro-r : {A : prop} {B : prop} B -> A \/ B
+  := [A] [B] [hB] [C] [hAC] [hBC] hBC(hB)
+def \/-elim
+  : {A : prop} {B : prop} {C : prop} (A \/ B) -> (A -> C) -> (B -> C) -> C
+  := [A] [B] [C] [h\/] h\/(C)
+
+def <-> : prop -> prop -> prop := [A] [B] (A -> B) /\ B -> A
+
+def <->-intro : {A : prop} {B : prop} (A -> B) -> (B -> A) -> A <-> B
+  := [A] [B] [hAB] [hBA] /\-intro(A -> B, B -> A, hAB, hBA)
+def <->-elim-l : {A : prop} {B : prop} (A <-> B) -> A -> B
+  := [A] [B] [h<->] /\-elim-l(A -> B, B -> A, h<->)
+def <->-elim-r : {A : prop} {B : prop} (A <-> B) -> B -> A
+  := [A] [B] [h<->] /\-elim-r(A -> B, B -> A, h<->)
+
+def Ex : {A : prop} {P : A -> prop} prop
+  := [A] [P] {B : prop} ({x : A} P(x) -> B) -> B
+
+def ex-intro : {A : prop} {P : A -> prop} {x : A} P(x) -> Ex(A, P)
+  := [A] [P] [x] [hx] [B] [hP] hP(x, hx)
+def ex-elim
+  : {A : prop} {P : A -> prop} {B : prop} Ex(A, P) -> ({x : A} P(x) -> B) -> B
+  := [A] [P] [B] [hEx] [hP] hEx(B, hP)
+
+def Ex<=1 : {A : prop} {P : A -> prop} prop
+  := [A] [P] {x : A} {y : A} P(x) -> P(y) -> x =@A y
+
+def Ex1 : {A : prop} {P : A -> prop} prop := [A] [P] Ex(A, P) /\ Ex<=1(A, P)

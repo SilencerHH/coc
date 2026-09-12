@@ -1,0 +1,17 @@
+def = : {A : prop} A -> A -> prop := [A] [x] [y] {P : A -> prop} P(x) -> P(y)
+
+def =-refl : {A : prop} {x : A} x =@A x := [A] [x] [P] [hx] hx
+def =-symm : {A : prop} {x : A} {y : A} (x =@A y) -> y =@A x
+  := [A] [x] [y] [hxy] hxy([z] z =@A x, =-refl(A, x))
+def =-trans
+  : {A : prop} {x : A} {y : A} {z : A} (x =@A y) -> (y =@A z) -> x =@A z
+  := [A] [x] [y] [z] [hxy] [hyz] [P] [hx] hyz(P, hxy(P, hx))
+
+def =-subst
+  : {A : prop} {P : A -> prop} {x : A} {y : A} (x =@A y) -> P(x) -> P(y)
+  := [A] [P] [x] [y] [hxy] [hx] hxy(P, hx)
+
+def =-congr
+  : {A : prop} {B : prop} {f : A -> B} {x : A} {y : A}
+    (x =@A y) -> f(x) =@B f(y)
+  := [A] [B] [f] [x] [y] [hxy] [P] [hfx] =-subst(A, [z] P(f(z)), x, y, hxy, hfx)

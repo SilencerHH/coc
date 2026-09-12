@@ -1,0 +1,4 @@
+axiom exc-mid : {A : prop} A \/ ~(A)
+
+def ~~-elim : {A : prop} ~(~(A)) -> A
+  := [A] [h~~] \/-elim(A, ~(A), A, exc-mid(A), [hA] hA, [h~] h~~(h~, A))

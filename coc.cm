@@ -1,0 +1,14 @@
+Group is
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  src/ctx.sml
+  src/env.sml
+  src/kernel.sml
+  src/lex.sml
+  src/main.sml
+  src/parse.sml
+  src/report.sml
+  src/syntax.sml
+  src/term.sml
+  src/test.sml
