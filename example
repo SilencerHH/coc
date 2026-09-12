@@ -1,0 +1,1 @@
+def id : {A : prop} A -> A := [A] [x] ?
