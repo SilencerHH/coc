@@ -225,8 +225,21 @@ structure Test :> sig end = struct
       "axiom a : prop axiom b : a axiom c : b"
       ":1.38-1.39: type mismatch\nexpected (sort)\ngot      a"
 
-  (* 无法推断 *)
+  (* 无法推断 1 *)
   val () = fails "def x := [x] x" ":1.10-1.15: cannot infer type of x"
+
+  (* 无法推断 2 *)
+  val () = fails "def x := ?" ":1.10-1.11: cannot infer type of ?"
+
+  (* 洞 *)
+  val () =
+    fails
+      "def x : {A : prop} A -> A := [A] [a] let b := [x : A] x in ?"
+      ":1.60-1.61: hole\n\
+      \A : prop\n\
+      \a : A\n\
+      \b : {$1 : A} A := [$1 : A] $1\n\
+      \expected A"
 
   (* 变量遮蔽 *)
   val () =

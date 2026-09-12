@@ -91,6 +91,7 @@ end = struct
         val (t2, u2) = inferWith env ctx e1 e2
         val (t3, u3) = infer env (C.add (ctx, {x = x, v = SOME t2, t = u2})) e3
       in (shift ~1 t3, shift ~1 u3) end
+    | S.Hole => raise R.Infer (loc, "?")
 
   and check env ctx u (loc, e) = case e of
     S.Lam (x, e1, e2) =>
@@ -113,6 +114,7 @@ end = struct
         val t3 =
           check env (C.add (ctx, {x = x, v = SOME t2, t = u2})) (shift 1 u) e3
       in shift ~1 t3 end
+    | S.Hole => raise R.Hole (loc, ctx, u)
     | _ =>
       let val (t, u') = infer env ctx (loc, e)
       in

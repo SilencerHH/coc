@@ -45,6 +45,7 @@ end = struct
         val _ = eat strm IN
         val e3 = exp strm
       in ((pos1, #2 (#1 e3)), Let (x, e1, e2, e3)) end
+    | QUEST => (getLoc (eat strm QUEST), Hole)
     | _ =>
       let
         val _ = eat strm LPAREN

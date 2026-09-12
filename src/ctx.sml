@@ -7,6 +7,7 @@ structure Ctx :> sig
   val add : ctx * entry -> ctx
   val get : ctx * string -> (int * entry) option
   val nth : ctx * int -> entry
+  val foldback : (ctx * entry * 'a -> 'a) -> 'a -> ctx -> 'a
 
 end = struct
 
@@ -20,5 +21,9 @@ end = struct
   fun get (ctx : ctx, x) = List.findi (fn (_, {x = y, ...}) => x = y) ctx
 
   val nth = List.nth
+
+  fun foldback f x = fn
+    [] => x
+    | entry :: ctx => foldback f (f (ctx, entry, x)) ctx
 
 end

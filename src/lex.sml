@@ -19,6 +19,7 @@ local
     | LBRACE
     | LBRACK
     | LPAREN
+    | QUEST
     | RBRACE
     | RBRACK
     | RPAREN
@@ -77,6 +78,7 @@ in
       | SOME #"{" => cut 1 LBRACE ss
       | SOME #"[" => cut 1 LBRACK ss
       | SOME #"(" => cut 1 LPAREN ss
+      | SOME #"?" => cut 1 QUEST ss
       | SOME #"}" => cut 1 RBRACE ss
       | SOME #"]" => cut 1 RBRACK ss
       | SOME #")" => cut 1 RPAREN ss

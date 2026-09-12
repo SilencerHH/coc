@@ -7,6 +7,7 @@ structure Report :> sig
   exception Duplicate of loc * string
   exception Mismatch of loc * string * string
   exception Infer of loc * string
+  exception Hole of loc * Ctx.ctx * Term.term
 
   val show : Ctx.ctx -> Term.term -> string
   val report : string -> string -> exn -> 'a
@@ -24,6 +25,7 @@ end = struct
   exception Duplicate of loc * string
   exception Mismatch of loc * string * string
   exception Infer of loc * string
+  exception Hole of loc * C.ctx * term
 
   fun show ctx t =
     let
@@ -67,6 +69,17 @@ end = struct
       | Mismatch (loc, t1, t2) =>
         report' loc ("type mismatch\nexpected " ^ t1 ^ "\ngot      " ^ t2)
       | Infer (loc, x) => report' loc ("cannot infer type of " ^ x)
+      | Hole (loc, ctx, t) =>
+        report'
+          loc
+          ("hole\n"
+            ^ C.foldback
+              (fn (ctx, {x, t, v}, s) =>
+                x ^ " : " ^ show ctx t
+                  ^ (case v of NONE => "" | SOME v' => " := " ^ show ctx v')
+                  ^ "\n" ^ s)
+              ("expected " ^ show ctx t)
+              ctx)
       | _ => raise ex end
 
 end
