@@ -135,12 +135,12 @@ end = struct
         val () = case normalize u of
           Sort _ => ()
           | _ => raise R.Mismatch (#1 e, "(sort)", R.show C.empty u)
-      in E.add (env, x, {v = Axiom x, t = t}) end
+      in E.addAxiom (env, x, t) end
     | S.Def (x, e1, e2) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
         val (t2, u2) = inferWith env C.empty e1 e2
-      in E.add (env, x, {v = Def (x, t2), t = u2}) end
+      in E.addDef (env, x, {v = t2, t = u2}) end
 
   fun validate env = app (validate1 env)
 

@@ -1,5 +1,6 @@
 structure Test :> sig end = struct
 
+  structure C = Ctx
   structure E = Env
   structure K = Kernel
   structure P = Parse
@@ -7,7 +8,9 @@ structure Test :> sig end = struct
 
   open Syntax
 
-  fun run src = K.validate (E.new ()) (P.parse src)
+  fun runWith env src = K.validate env (P.parse src)
+
+  fun run src = runWith (E.new ()) src
 
   fun fails src msg =
     (run src; raise Match)
@@ -21,9 +24,9 @@ structure Test :> sig end = struct
   val () =
     let val env = E.new ()
     in
-      K.validate env (P.parse "def x := prop");
+      runWith env "def x := prop";
       E.commit env;
-      K.validate env (P.parse "def y := x");
+      runWith env "def y := x";
       E.commit env;
       if E.has (env, "x") andalso E.has (env, "y") then () else raise Match;
       E.reset env;
@@ -34,16 +37,32 @@ structure Test :> sig end = struct
   val () =
     let val env = E.new ()
     in
-      K.validate env (P.parse "def x := prop");
+      runWith env "def x := prop";
       if E.has (env, "x") then () else raise Match;
       E.rollback env;
-      K.validate env (P.parse "def y := prop");
+      runWith env "def y := prop";
       if not (E.has (env, "x")) andalso E.has (env, "y") then ()
       else raise Match;
       E.commit env;
       E.rollback env;
-      K.validate env (P.parse "def x := y");
+      runWith env "def x := y";
       if E.has (env, "x") andalso E.has (env, "y") then () else raise Match end
+
+  (* 公理列表 *)
+  val () =
+    let val env = E.new ()
+    in
+      runWith env "axiom b : prop";
+      runWith env "axiom a : b";
+      runWith env "def c := a";
+      runWith env "axiom d : b -> b";
+      if
+        E.has (env, "a") andalso E.has (env, "b")
+          andalso E.has (env, "c") andalso E.has (env, "d") then ()
+      else raise Match;
+      case map (fn (x, t) => (x, R.show C.empty t)) (E.listAxioms env) of
+        [("a", "b"), ("b", "prop"), ("d", "{$1 : b} b")] => ()
+        | _ => raise Match end
 
   (***** 解析 *****)
 

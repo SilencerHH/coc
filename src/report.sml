@@ -33,7 +33,7 @@ end = struct
         Sort Prop => "prop"
         | Sort Type => "#"
         | (Axiom x | Def (x, _)) => x
-        | Var n => #x (C.index (ctx, n))
+        | Var n => #x (C.nth (ctx, n))
         | Pi (t1, t2) =>
           let val x = fresh ()
           in

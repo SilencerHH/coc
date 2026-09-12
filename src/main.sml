@@ -4,12 +4,14 @@ structure Main :> sig
   val commit : unit -> unit
   val load : string -> unit
   val reset : unit -> unit
+  val axioms : unit -> unit
 
 end = struct
 
   structure IOU = IOUtil
   structure TIO = TextIO
 
+  structure C = Ctx
   structure E = Env
   structure K = Kernel
   structure P = Parse
@@ -29,5 +31,10 @@ end = struct
   fun load filename = check filename before commit ()
 
   fun reset () = E.reset env
+
+  fun axioms () =
+    app
+      (fn (x, t) => print (x ^ " : " ^ R.show C.empty t ^ "\n"))
+      (E.listAxioms env)
 
 end
