@@ -204,12 +204,6 @@ structure Test :> sig end = struct
       "axiom a : prop axiom b : a axiom c : b"
       ":1.38-1.39: type mismatch\nexpected (sort)\ngot      a"
 
-  (* 类型判等错误 *)
-  val () =
-    fails
-      "axiom a : prop axiom b : a def x := let c := a in let d : c := b in d"
-      ":1.64-1.65: type mismatch\nexpected c\ngot      a"
-
   (* 无法推断 *)
   val () = fails "def x := [x] x" ":1.10-1.15: cannot infer type of x"
 
@@ -226,6 +220,23 @@ structure Test :> sig end = struct
         \def 1+ : A -> B -> B := 1\n\
         \def 2 := let a := a in let a := b in a\n\
         \def 2+ : B := 2")
+
+  (* 类型判等 *)
+  val () =
+    K.validate
+      (E.new ())
+      (P.parse
+        "axiom a : prop\n\
+        \axiom b : a\n\
+        \def x := let c := a in let d : c := b in ([x : c] x)(b)")
+
+  (* 类型位置 let *)
+  val () =
+    K.validate
+      (E.new ())
+      (P.parse
+        "def x : let t := {A : prop} A -> A in t\n\
+        \  := [A] [a] let x : let B := A in B := a in x")
 
   (* 编码自然数 *)
   val () =

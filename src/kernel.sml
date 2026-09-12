@@ -4,6 +4,7 @@ structure Kernel :> sig
 
 end = struct
 
+  structure C = Ctx
   structure E = Env
   structure R = Report
   structure S = Syntax
@@ -50,8 +51,9 @@ end = struct
 
   fun infer env ctx (loc, e) = case e of
     S.Prop => (Sort Prop, Sort Type)
-    | S.Var x => (case List.findi (fn (_, (y, _)) => x = y) ctx of
-      SOME (n, (_, t)) => (Var n, shift (n + 1) t)
+    | S.Var x => (case C.get (ctx, x) of
+      SOME (n, {v = NONE, t, ...}) => (Var n, shift (n + 1) t)
+      | SOME (n, {v = SOME v, t, ...}) => (shift (n + 1) v, shift (n + 1) t)
       | NONE => (case E.get (env, x) of
         SOME {v, t} => (v, t)
         | NONE => raise R.Unbound (loc, x)))
@@ -61,7 +63,7 @@ end = struct
         val () = case normalize u1 of
           Sort _ => ()
           | _ => raise R.Mismatch (#1 e1, "(sort)", R.show ctx u1)
-        val ctx' = (x, t1) :: ctx
+        val ctx' = C.add (ctx, {x = x, v = NONE, t = t1})
         val (t2, u2) = infer env ctx' e2
         val () = case normalize u2 of
           Sort _ => ()
@@ -74,7 +76,7 @@ end = struct
         val () = case normalize u1 of
           Sort _ => ()
           | _ => raise R.Mismatch (#1 e1, "(sort)", R.show ctx u1)
-        val (t2, u2) = infer env ((x, t1) :: ctx) e2
+        val (t2, u2) = infer env (C.add (ctx, {x = x, v = NONE, t = t1})) e2
       in (Lam (t1, t2), Pi (t1, u2)) end
     | S.App (e1, e2) =>
       let
@@ -93,8 +95,8 @@ end = struct
               val (t1, _) = infer env ctx e1'
               val t2 = check env ctx t1 e2
             in (t2, t1) end
-        val (t3, u3) = infer env ((x, u2) :: ctx) e3
-      in (App (Lam (u2, t3), t2), subst t2 u3) end
+        val (t3, u3) = infer env (C.add (ctx, {x = x, v = SOME t2, t = u2})) e3
+      in (shift ~1 t3, shift ~1 u3) end
 
   and check env ctx u (loc, e) = case e of
     S.Lam (x, e1, e2) =>
@@ -109,7 +111,7 @@ end = struct
             in
               if equiv (u1, t1) then t1
               else raise R.Mismatch (#1 e1', R.show ctx u1, R.show ctx t1) end
-        val t2 = check env ((x, t1) :: ctx) u2 e2
+        val t2 = check env (C.add (ctx, {x = x, v = NONE, t = t1})) u2 e2
       in Lam (t1, t2) end
     | _ =>
       let val (t, u') = infer env ctx (loc, e)
@@ -121,21 +123,21 @@ end = struct
     S.Axiom (x, e) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-        val (t, u) = infer env [] e
+        val (t, u) = infer env C.empty e
         val () = case normalize u of
           Sort _ => ()
-          | _ => raise R.Mismatch (#1 e, "(sort)", R.show [] u)
+          | _ => raise R.Mismatch (#1 e, "(sort)", R.show C.empty u)
       in E.add (env, x, {v = Axiom x, t = t}) end
     | S.Def (x, NONE, e) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-        val (t, u) = infer env [] e
+        val (t, u) = infer env C.empty e
       in E.add (env, x, {v = Def (x, t), t = u}) end
     | S.Def (x, SOME e1, e2) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-        val (t1, _) = infer env [] e1
-        val t2 = check env [] t1 e2
+        val (t1, _) = infer env C.empty e1
+        val t2 = check env C.empty t1 e2
       in E.add (env, x, {v = Def (x, t2), t = t1}) end
 
   fun validate env = app (validate1 env)

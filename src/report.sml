@@ -8,10 +8,12 @@ structure Report :> sig
   exception Mismatch of loc * string * string
   exception Infer of loc * string
 
-  val show : (string * Term.term) list -> Term.term -> string
+  val show : Ctx.ctx -> Term.term -> string
   val report : string -> string -> exn -> 'a
 
 end = struct
+
+  structure C = Ctx
 
   open Term
 
@@ -31,13 +33,17 @@ end = struct
         Sort Prop => "prop"
         | Sort Type => "#"
         | (Axiom x | Def (x, _)) => x
-        | Var n => (#1 o #2 o valOf o List.findi (fn (m, _) => m = n)) ctx
+        | Var n => #x (C.index (ctx, n))
         | Pi (t1, t2) =>
           let val x = fresh ()
-          in "{" ^ x ^ " : " ^ go ctx t1 ^ "} " ^ go ((x, t1) :: ctx) t2 end
+          in
+            "{" ^ x ^ " : " ^ go ctx t1 ^ "} "
+              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 end
         | Lam (t1, t2) =>
           let val x = fresh ()
-          in "[" ^ x ^ " : " ^ go ctx t1 ^ "] " ^ go ((x, t1) :: ctx) t2 end
+          in
+            "[" ^ x ^ " : " ^ go ctx t1 ^ "] "
+              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 end
         | App (t1, t2) => go ctx t1 ^ "(" ^ go ctx t2 ^ ")"
     in go ctx t end
 
