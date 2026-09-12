@@ -10,7 +10,7 @@ structure Syntax = struct
     | App of exp * exp
   withtype exp = loc * exp'
 
-  datatype cmd' = Def of string * exp option * exp
+  datatype cmd' = Axiom of string * exp | Def of string * exp option * exp
   withtype cmd = loc * cmd'
 
   type prog = cmd list

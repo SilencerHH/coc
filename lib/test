@@ -31,3 +31,8 @@ def =-symm : {A : prop} {x : A} {y : A} (x =@A y) -> y =@A x
 def =-trans
   : {A : prop} {x : A} {y : A} {z : A} (x =@A y) -> (y =@A z) -> x =@A z
   := [A] [x] [y] [z] [hxy] [hyz] [P] [hx] hyz(P, hxy(P, hx))
+
+axiom excluded-middle : {A : prop} A \/ ~(A)
+def double-negation-elim : {A : prop} ~(~(A)) -> A
+  := [A] [hnna]
+    \/-elim(A, ~(A), A, excluded-middle(A), [ha] ha, [hna] hnna(hna, A))

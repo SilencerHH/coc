@@ -2,7 +2,8 @@ local
 
   datatype tag =
     (* 文字关键字 *)
-    DEF
+    AXIOM
+    | DEF
     | PROP
     (* 符号关键字 *)
     | MINUSGT
@@ -81,7 +82,8 @@ in
         let
           val (ss1, ss2) = SS.splitl isIdent ss
           val tag = case SS.string ss1 of
-            "def" => DEF
+            "axiom" => AXIOM
+            | "def" => DEF
             | "prop" => PROP
             | "->" => MINUSGT
             | "" => ERROR

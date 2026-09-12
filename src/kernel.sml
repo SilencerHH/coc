@@ -30,15 +30,16 @@ end = struct
 
   fun normalize env = fn
     t as (Sort _ | Var _ | Pi _ | Lam _) => t
-    | Const x =>
-      let val E.Df {v, ...} = valOf (E.get (env, x)) in normalize env v end
+    | t as Const x => (case valOf (E.get (env, x)) of
+      E.Ax _ => t
+      | E.Df {v, ...} => normalize env v)
     | App (t1, t2) => (case normalize env t1 of
       Lam (_, t3) => normalize env (subst t2 t3)
       | t1' => App (t1', t2))
 
   fun equiv env (t1, t2) = case (normalize env t1, normalize env t2) of
     (Sort s1, Sort s2) => s1 = s2
-    | ((Const _, _) | (_, Const _)) => raise Match
+    | (Const x1, Const x2) => x1 = x2
     | (Var n1, Var n2) => n1 = n2
     | (Pi (t11, t12), Pi (t21, t22)) =>
       equiv env (t11, t21) andalso equiv env (t12, t22)
@@ -53,7 +54,7 @@ end = struct
     | S.Var x => (case List.findi (fn (_, (y, _)) => x = y) ctx of
       SOME (n, (_, t)) => (Var n, shift (n + 1) t)
       | NONE => (case E.get (env, x) of
-        SOME (E.Df {t, ...}) => (Const x, t)
+        SOME (E.Ax t | E.Df {t, ...}) => (Const x, t)
         | NONE => raise R.Unbound (loc, x)))
     | S.Pi (x, e1, e2) =>
       let
@@ -107,7 +108,10 @@ end = struct
         else raise R.Mismatch (loc, R.show ctx u, R.show ctx u') end
 
   fun validate1 env (loc, c) = case c of
-    S.Def (x, NONE, e) =>
+    S.Axiom (x, e) => (
+      if E.has (env, x) then raise R.Duplicate (loc, x) else ();
+      E.add (env, x, E.Ax (#1 (infer env [] e))))
+    | S.Def (x, NONE, e) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
         val (t, u) = infer env [] e
