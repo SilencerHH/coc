@@ -198,6 +198,12 @@ structure Test :> sig end = struct
       \expected False\n\
       \got      True"
 
+  (* 类型错误 12 *)
+  val () =
+    fails
+      "axiom a : prop axiom b : a axiom c : b"
+      ":1.38-1.39: type mismatch\nexpected (sort)\ngot      a"
+
   (* 无法推断 *)
   val () = fails "def x := [x] x" ":1.10-1.15: cannot infer type of x"
 

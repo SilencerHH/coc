@@ -107,9 +107,14 @@ end = struct
         else raise R.Mismatch (loc, R.show ctx u, R.show ctx u') end
 
   fun validate1 env (loc, c) = case c of
-    S.Axiom (x, e) => (
-      if E.has (env, x) then raise R.Duplicate (loc, x) else ();
-      E.add (env, x, {v = Axiom x, t = #1 (infer env [] e)}))
+    S.Axiom (x, e) =>
+      let
+        val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
+        val (t, u) = infer env [] e
+        val () = case normalize u of
+          Sort _ => ()
+          | _ => raise R.Mismatch (#1 e, "(sort)", R.show [] u)
+      in E.add (env, x, {v = Axiom x, t = t}) end
     | S.Def (x, NONE, e) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
