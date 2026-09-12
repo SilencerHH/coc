@@ -88,13 +88,7 @@ end = struct
       in (App (t1, t2), subst t2 u12) end
     | S.Let (x, e1, e2, e3) =>
       let
-        val (t2, u2) = case e1 of
-          NONE => infer env ctx e2
-          | SOME e1' =>
-            let
-              val (t1, _) = infer env ctx e1'
-              val t2 = check env ctx t1 e2
-            in (t2, t1) end
+        val (t2, u2) = inferWith env ctx e1 e2
         val (t3, u3) = infer env (C.add (ctx, {x = x, v = SOME t2, t = u2})) e3
       in (shift ~1 t3, shift ~1 u3) end
 
@@ -113,11 +107,25 @@ end = struct
               else raise R.Mismatch (#1 e1', R.show ctx u1, R.show ctx t1) end
         val t2 = check env (C.add (ctx, {x = x, v = NONE, t = t1})) u2 e2
       in Lam (t1, t2) end
+    | S.Let (x, e1, e2, e3) =>
+      let
+        val (t2, u2) = inferWith env ctx e1 e2
+        val t3 =
+          check env (C.add (ctx, {x = x, v = SOME t2, t = u2})) (shift 1 u) e3
+      in shift ~1 t3 end
     | _ =>
       let val (t, u') = infer env ctx (loc, e)
       in
         if equiv (u, u') then t
         else raise R.Mismatch (loc, R.show ctx u, R.show ctx u') end
+
+  and inferWith env ctx e1 e2 = case e1 of
+    NONE => infer env ctx e2
+    | SOME e1' =>
+      let
+        val (t1, _) = infer env ctx e1'
+        val t2 = check env ctx t1 e2
+      in (t2, t1) end
 
   fun validate1 env (loc, c) = case c of
     S.Axiom (x, e) =>
@@ -128,17 +136,11 @@ end = struct
           Sort _ => ()
           | _ => raise R.Mismatch (#1 e, "(sort)", R.show C.empty u)
       in E.add (env, x, {v = Axiom x, t = t}) end
-    | S.Def (x, NONE, e) =>
+    | S.Def (x, e1, e2) =>
       let
         val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-        val (t, u) = infer env C.empty e
-      in E.add (env, x, {v = Def (x, t), t = u}) end
-    | S.Def (x, SOME e1, e2) =>
-      let
-        val () = if E.has (env, x) then raise R.Duplicate (loc, x) else ()
-        val (t1, _) = infer env C.empty e1
-        val t2 = check env C.empty t1 e2
-      in E.add (env, x, {v = Def (x, t2), t = t1}) end
+        val (t2, u2) = inferWith env C.empty e1 e2
+      in E.add (env, x, {v = Def (x, t2), t = u2}) end
 
   fun validate env = app (validate1 env)
 

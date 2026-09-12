@@ -7,8 +7,10 @@ structure Test :> sig end = struct
 
   open Syntax
 
+  fun run src = K.validate (E.new ()) (P.parse src)
+
   fun fails src msg =
-    (K.validate (E.new ()) (P.parse src); raise Match)
+    (run src; raise Match)
       handle ex =>
         (R.report "" src ex
           handle ex as Fail msg' => if msg = msg' then () else raise ex)
@@ -209,50 +211,48 @@ structure Test :> sig end = struct
 
   (* 变量遮蔽 *)
   val () =
-    K.validate
-      (E.new ())
-      (P.parse
-        "axiom A : prop\n\
-        \axiom B : prop\n\
-        \axiom a : A\n\
-        \axiom b : B\n\
-        \def 1 := [a : A] [a : B] a\n\
-        \def 1+ : A -> B -> B := 1\n\
-        \def 2 := let a := a in let a := b in a\n\
-        \def 2+ : B := 2")
+    run
+      "axiom A : prop\n\
+      \axiom B : prop\n\
+      \axiom a : A\n\
+      \axiom b : B\n\
+      \def 1 := [a : A] [a : B] a\n\
+      \def 1+ : A -> B -> B := 1\n\
+      \def 2 := let a := a in let a := b in a\n\
+      \def 2+ : B := 2"
 
   (* 类型判等 *)
   val () =
-    K.validate
-      (E.new ())
-      (P.parse
-        "axiom a : prop\n\
-        \axiom b : a\n\
-        \def x := let c := a in let d : c := b in ([x : c] x)(b)")
+    run
+      "axiom a : prop\n\
+      \axiom b : a\n\
+      \def x := let c := a in let d : c := b in ([x : c] x)(b)"
+
+  (* 参数类型推断 *)
+  val () =
+    run
+      "def x : {A : prop} A -> A\n\
+      \  := [A] let _ := ([x : A -> A] x)([x] x) in [a] a"
 
   (* 类型位置 let *)
   val () =
-    K.validate
-      (E.new ())
-      (P.parse
-        "def x : let t := {A : prop} A -> A in t\n\
-        \  := [A] [a] let x : let B := A in B := a in x")
+    run
+      "def x : let t := {A : prop} A -> A in t\n\
+      \  := [A] [a] let x : let B := A in B := a in x"
 
   (* 编码自然数 *)
   val () =
-    K.validate
-      (E.new ())
-      (P.parse
-        "def Nat := {A : prop} A -> (A -> A) -> A\n\
-        \def 1 : Nat := [A : prop] [z : A] [s : A -> A] s(z)\n\
-        \def 2 : Nat := [A] [z] [s] s(s(z))\n\
-        \def + : Nat -> Nat -> Nat\n\
-        \  := [m : Nat] [n : Nat] [A : prop] [z : A] [s : A -> A]\n\
-        \    m(A, n(A, z, s), s)\n\
-        \def = : {A : prop} A -> A -> prop\n\
-        \  := [A : prop] [x : A] [y : A] {P : A -> prop} P(x) -> P(y)\n\
-        \def refl : {A : prop} {x : A} =(A, x, x)\n\
-        \  := [A : prop] [x : A] [P : A -> prop] [h : P(x)] h\n\
-        \def 1+1=2 : =(Nat, +(1, 1), 2) := refl(Nat, 2)")
+    run
+      "def Nat := {A : prop} A -> (A -> A) -> A\n\
+      \def 1 : Nat := [A : prop] [z : A] [s : A -> A] s(z)\n\
+      \def 2 : Nat := [A] [z] [s] s(s(z))\n\
+      \def + : Nat -> Nat -> Nat\n\
+      \  := [m : Nat] [n : Nat] [A : prop] [z : A] [s : A -> A]\n\
+      \    m(A, n(A, z, s), s)\n\
+      \def = : {A : prop} A -> A -> prop\n\
+      \  := [A : prop] [x : A] [y : A] {P : A -> prop} P(x) -> P(y)\n\
+      \def refl : {A : prop} {x : A} =(A, x, x)\n\
+      \  := [A : prop] [x : A] [P : A -> prop] [h : P(x)] h\n\
+      \def 1+1=2 : =(Nat, +(1, 1), 2) := refl(Nat, 2)"
 
 end
