@@ -39,13 +39,13 @@ end = struct
         | Pi (t1, t2) =>
           let val x = fresh ()
           in
-            "{" ^ x ^ " : " ^ go ctx t1 ^ "} "
-              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 end
+            "({" ^ x ^ " : " ^ go ctx t1 ^ "} "
+              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 ^ ")" end
         | Lam (t1, t2) =>
           let val x = fresh ()
           in
-            "[" ^ x ^ " : " ^ go ctx t1 ^ "] "
-              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 end
+            "([" ^ x ^ " : " ^ go ctx t1 ^ "] "
+              ^ go (C.add (ctx, {x = x, v = NONE, t = t1})) t2 ^ ")" end
         | App (t1, t2) => go ctx t1 ^ "(" ^ go ctx t2 ^ ")"
     in go ctx t end
 

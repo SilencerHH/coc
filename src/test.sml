@@ -61,7 +61,7 @@ structure Test :> sig end = struct
           andalso E.has (env, "c") andalso E.has (env, "d") then ()
       else raise Match;
       case map (fn (x, t) => (x, R.show C.empty t)) (E.listAxioms env) of
-        [("a", "b"), ("b", "prop"), ("d", "{$1 : b} b")] => ()
+        [("a", "b"), ("b", "prop"), ("d", "({$1 : b} b)")] => ()
         | _ => raise Match end
 
   (***** 解析 *****)
@@ -179,7 +179,7 @@ structure Test :> sig end = struct
   val () =
     fails
       "def x : {a : prop -> prop} prop := [a : prop] prop"
-      ":1.41-1.45: type mismatch\nexpected {$1 : prop} prop\ngot      prop"
+      ":1.41-1.45: type mismatch\nexpected ({$1 : prop} prop)\ngot      prop"
 
   (* 类型错误 7 *)
   val () =
@@ -205,7 +205,7 @@ structure Test :> sig end = struct
       "def False := {A : prop} A\n\
       \def ~ : {A : prop} A -> False := [A : prop] A -> False"
       ":2.45-2.55: type mismatch\n\
-      \expected {$1 : A} False\n\
+      \expected ({$1 : A} False)\n\
       \got      prop"
 
   (* 类型错误 11 *)
@@ -238,7 +238,7 @@ structure Test :> sig end = struct
       ":1.60-1.61: hole\n\
       \A : prop\n\
       \a : A\n\
-      \b : {$1 : A} A := [$1 : A] $1\n\
+      \b : ({$1 : A} A) := ([$1 : A] $1)\n\
       \expected A"
 
   (* 变量遮蔽 *)
